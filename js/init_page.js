@@ -1,11 +1,16 @@
+console.log("loaded init_page.js");
+
 window.onload=function(evt){
 	var inputParent=document.getElementById("input-parent");
-	appendTextInput(inputParent,"channelSearch","Channel");
-	appendTextInput(inputParent,"searchTerm","Search Term");
-	appendTextInput(inputParent,"requiredKeyword","Keyword");
-	appendSelection(inputParent,"sortType",{"relevance":"Random","date":"Date"});
+	var channelSearchTermInput=appendTextInput(inputParent,"channelSearchTerm","Channel");
 	appendLineBreak(inputParent);
-	appendButton(inputParent,"searchButton","L∞p","constructPlaylist()");
+	var searchTermInput=appendTextInput(inputParent,"searchTerm","Search Term");
+	appendLineBreak(inputParent);
+	var requiredKeywordInput=appendTextInput(inputParent,"requiredKeyword","Keyword");
+	appendLineBreak(inputParent);
+	var sortTypeInput=appendSelection(inputParent,"sortType",{"relevance":"Random","date":"Date"});
+	appendLineBreak(inputParent);
+	appendButton(inputParent,"searchButton","L∞p","currentPlaylistIndex=0;constructPlaylist();");
 
 	var playerInputParent=document.getElementById("player-input-parent");
 	appendButton(playerInputParent,"prevButton","Previous","previousVideo()").setAttribute("style","float:left");
@@ -15,6 +20,24 @@ window.onload=function(evt){
 		"style":"float:center;"
 	},"");
 	playerInputParent.appendChild(debugDiv);
+
+	var cookieData=loadCookies();
+	/*console.log(cookieData);
+	for(var key in cookieData)
+		console.log(key);*/
+	
+	if (cookieData["cookieVersion"]=="1.0"){
+		console.log("Valid cookie found");
+
+		channelSearchTermInput.value=cookieData["channelSearchTerm"];
+		console.log(channelSearchTermInput.value);
+		searchTermInput.value=cookieData["searchTerm"];
+		requiredKeywordInput.value=cookieData["requiredKeyword"];
+		sortTypeInput.value=cookieData["sortType"];
+		currentPlaylistIndex=parseInt(cookieData["index"]);
+		console.log("Cookie applied");
+		constructPlaylist();
+	}
 }
 
 function appendTextInput(parentNode,id,printName){
@@ -37,7 +60,7 @@ function appendTextInput(parentNode,id,printName){
 
 	textNode.appendChild(input);
 	parentNode.appendChild(textNode);
-	return textNode;
+	return input;
 }
 
 function appendSelection(parentNode,id,options){
@@ -59,7 +82,7 @@ function appendSelection(parentNode,id,options){
 	}
 	topNode.appendChild(selectNode);
 	parentNode.appendChild(topNode);
-	return topNode;
+	return selectNode;
 }
 
 function appendButton(parentNode,id,printName,onclick){
@@ -83,7 +106,7 @@ function createElementWithAttr(type,className,attrs,inner){
 		node.setAttribute(attr,attrs[attr]);
 	}
 	node.innerHTML=inner;
-	console.log(node.innerHTML);
+	//console.log(node.innerHTML);
 	return node;
 }
 

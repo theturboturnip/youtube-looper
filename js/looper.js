@@ -1,10 +1,10 @@
-console.log("loaded script.js");
+console.log("loaded looper.js");
 
 var player;
 var playlist=[];
 var currentPlaylistIndex;
 var loadedYouTubeAPI=false;
-var channelLimit="",requiredKeyword="",sortType="";
+var channelLimit={},requiredKeyword="",sortType="",searchTerm,channelSearchTerm;
 var pages=0,maxPages=20;
 
 /*function getGoodItemFromResponse(response,required,oldVideoId){
@@ -26,22 +26,23 @@ function setMessage(msg){
 }
 
 function constructPlaylist(){
+	console.log(currentPlaylistIndex);
 	channelLimit="";
-	var channelSearch=document.getElementById("channelSearch").value;
+	channelSearchTerm=document.getElementById("channelSearchTerm").value;
 	setMessage("Beginning search");
 
-	if (channelSearch!=""){
+	if (channelSearchTerm!=""){
 		var channelSearchData={
 			type : 'channel',
 			order : 'viewCount',
-			q : channelSearch,
+			q : channelSearchTerm,
 			maxResults : 1
 		}
 
 		search(channelSearchData,function(response){
 			console.log("yo");
 			resetChannelLimit();
-			channelLimit=response.items[0].id.channelId;
+			channelLimit=response.items[0];//.id.channelId;
 			//console.log("Found Channel "+channelLimit);
 			setMessage("Found Channel "+channelLimit);
 			pages=0;
@@ -60,7 +61,7 @@ function constructPlaylist(){
 
 function compileVideoList(){
 	console.log("Compiling list");
-	playlistBase=document.getElementById("searchTerm").value;
+	searchTerm=document.getElementById("searchTerm").value;
 	requiredKeyword=document.getElementById("requiredKeyword").value;
 	sortType=document.getElementById("sortType").value;
 	console.log(sortType);
@@ -68,9 +69,9 @@ function compileVideoList(){
 
 	var initialSearchData={
 		type : 'video',
-		q : playlistBase,
+		q : searchTerm,
 		maxResults : 50,
-		channelId : channelLimit,
+		channelId : channelLimit.id.channelId,
 		order:sortType
 	}
 
@@ -89,9 +90,9 @@ function addResponseToPlaylist(response){
 	}
 	var nextSearchData={
 		type : 'video',
-		q : playlistBase,
+		q : searchTerm,
 		maxResults : 50,
-		channelId : channelLimit,
+		channelId : channelLimit.id.channelId,
 		pageToken : response.nextPageToken,
 		order:sortType
 	}
@@ -109,32 +110,31 @@ function randomizePlaylist(){
 	}
 
 	console.log(playlist.length);
-	currentPlaylistIndex=0;
 	if (sortType=="relevance"){
 		//Durstenfeld shuffle
 		for (var i = playlist.length - 1; i > 0; i--) {
-	        var j = Math.floor(Math.random() * (i + 1));
-	        var temp = playlist[i];
-	        playlist[i] = playlist[j];
-	        playlist[j] = temp;
-	    }
-  		currentPlaylistIndex=Math.floor(Math.random()*(playlist.length));
-
+			var j = Math.floor(Math.random() * (i + 1));
+			var temp = playlist[i];
+			playlist[i] = playlist[j];
+			playlist[j] = temp;
+		}
+		currentPlaylistIndex=Math.floor(Math.random()*(playlist.length));
 	}else if (sortType=="date"){
 		playlist.reverse();
 	}
 
-    console.log(currentPlaylistIndex,playlist.length);
-    setMessage("Done!");
+	console.log(currentPlaylistIndex,playlist.length);
+	setMessage("Done!");
 
-    if (player==null)
+	if (player==null){
 		createPlayer();
-	else
+		applyPlaylistCookie();
+	}else
 		applyPlaylistToSite();
 }
 
 function resetChannelLimit(){
-	channelLimit="";
+	channelLimit={};
 	/*var element=document.getElementById("limitingChannel");
 	element.innerHTML="";
 	var errorTables=document.getElementsByClassName(" gc-bubbleDefault pls-container");
@@ -157,7 +157,20 @@ function previousVideo(){
 function applyPlaylistToSite(){
 	setMessage("");
 	player.loadVideoById(playlist[currentPlaylistIndex].id.videoId,0,"large");
+
+	applyPlaylistCookie();
 	//document.getElementById("next").src=playlist[playlist.length-1].snippet.thumbnails.default.url;
+}
+
+function applyPlaylistCookie(){
+	setCookies({
+		"cookieVersion":"1.0",
+		"channelSearchTerm":channelSearchTerm,
+		"searchTerm":searchTerm,
+		"requiredKeyword":requiredKeyword,
+		"sortType":sortType,
+		"index":currentPlaylistIndex
+	});
 }
 
 function onYouTubeIframeAPIReady() {
