@@ -4,45 +4,71 @@ window.onload=function(evt){
 	var inputParent=document.getElementById("input-parent");
 	var channelSearchTermInput=appendTextInput(inputParent,"channelSearchTerm","Channel");
 	appendLineBreak(inputParent);
-	var searchTermInput=appendTextInput(inputParent,"searchTerm","Search Term");
-	appendLineBreak(inputParent);
+	//var searchTermInput=appendTextInput(inputParent,"searchTerm","Search Term");
+	//appendLineBreak(inputParent);
 	var requiredKeywordInput=appendTextInput(inputParent,"requiredKeyword","Keyword");
 	appendLineBreak(inputParent);
-	var sortTypeInput=appendSelection(inputParent,"sortType",{"relevance":"Random","date":"Date"});
+	var sortTypeInput=appendSelection(inputParent,"sortType",{"relevance":"Random","date":"Date","title":"TV Series"});
 	appendLineBreak(inputParent);
-	appendButton(inputParent,"searchButton","L∞p","currentPlaylistIndex=0;constructPlaylist();");
+	var videoCountInput=appendTextInput(inputParent,"videoCount","Maximum Video Count","\\d+?","Value is not a number!");
+	appendLineBreak(inputParent);
+	appendButton(inputParent,"searchButton","L∞p","currentPlaylistIndex=0;currentVideoID=null;constructPlaylist();");
 
 	var playerInputParent=document.getElementById("player-input-parent");
-	appendButton(playerInputParent,"prevButton","Previous","previousVideo()").setAttribute("style","float:left");
-	appendButton(playerInputParent,"nextButton","Next","nextVideo()").setAttribute("style","float:right");
+	appendButton(playerInputParent,"prevButton","Previous","previousVideo()").setAttribute("style","float:left;display:inline-block;");
+	var indexDiv=createElementWithAttr("div",
+									   "",
+									   {
+									   		"id":"indexDiv",
+									   		"style":"display:inline-block;float:center;width:25%;"
+									   },
+									   "");
+	playerInputParent.appendChild(indexDiv);
+	var playlistIndexInput=appendTextInput(indexDiv,"currentPlaylistIndex","","\\d+?","Value is not a number!");
+	playlistIndexInput.setAttribute("onchange","changePlaylistIndex()");
+	//playlistIndexInput.setAttribute("style","position:relative;left:0%;width:flex;display:inline-block;height:50px");
+	/*var playlistLength=createElementWithAttr("div",
+											 "playlistLength",
+											 {
+											 	"style":"position:relative;right:0%;width:100px;display:inline-block;height:50px;"
+											 },"/?");*/
+	//playerInputParent.appendChild(playlistLength);
+	appendLineBreak(indexDiv);
+	//appendButton(indexDiv,"debugButton","Debug","console.log(playlist[currentPlaylistIndex]);")
+	//appendButton(indexDiv,"changePlaylistButton","Go","changePlaylistIndex()");
+	appendButton(playerInputParent,"nextButton","Next","nextVideo()").setAttribute("style","float:right;display:inline-block;");
 	var debugDiv=createElementWithAttr("div","",{
 		"id":"message",
 		"style":"float:center;"
 	},"");
-	playerInputParent.appendChild(debugDiv);
+	indexDiv.appendChild(debugDiv);
 
 	var cookieData=loadCookies();
 	/*console.log(cookieData);
 	for(var key in cookieData)
 		console.log(key);*/
 	
-	if (cookieData["cookieVersion"]=="1.0"){
+	if (cookieData["cookieVersion"]=="1.1"){
 		console.log("Valid cookie found");
 
 		channelSearchTermInput.value=cookieData["channelSearchTerm"];
 		console.log(channelSearchTermInput.value);
-		searchTermInput.value=cookieData["searchTerm"];
+		//searchTermInput.value=cookieData["searchTerm"];
 		requiredKeywordInput.value=cookieData["requiredKeyword"];
 		sortTypeInput.value=cookieData["sortType"];
+		currentVideoID=cookieData["videoId"];
 		currentPlaylistIndex=parseInt(cookieData["index"]);
+		videoCountInput.value=parseInt(cookieData["pageCount"]*50);
 		console.log("Cookie applied");
 		constructPlaylist();
 	}
 }
 
-function appendTextInput(parentNode,id,printName){
+function appendTextInput(parentNode,id,printName,pattern,errorText){
+	if (pattern==null) pattern=".+";
+	if (errorText==null) errorText="Invalid Input";
 	var textNode=document.createElement("div");
-	textNode.className="mdl-textfield mdl-js-textfield";
+	textNode.className="mdl-textfield mdl-js-textfield mdl-textfield--floating-label";
 	var label=createElementWithAttr("label",
 									"mdl-textfield__label",
 									{
@@ -54,9 +80,14 @@ function appendTextInput(parentNode,id,printName){
 									"mdl-textfield__input",
 									{
 										"id":id,
-										"type":"text"
+										"type":"text",
+										"pattern":pattern
 									},
 									"");
+	var error=createElementWithAttr("span",
+									"mdl-textfield__error",
+									{},
+									errorText);
 
 	textNode.appendChild(input);
 	parentNode.appendChild(textNode);

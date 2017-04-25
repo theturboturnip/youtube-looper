@@ -1,0 +1,30 @@
+#player-side{
+	left:0%;
+	right:800px;
+	position:absolute;
+}
+
+#player-parent{
+	width:100%;
+	background-color:black;
+	position:relative;
+	display:inline-block;
+}
+
+#player-parent::after{
+	padding-top: 56.25%;
+	display:block;
+	content: '';
+}
+
+#player{
+	position: absolute;
+	top:0;
+	bottom:0;
+	left:0;
+	right:0;
+}
+
+html{
+	overflow:hidden;
+}

@@ -4,28 +4,28 @@ var player;
 var playlist=[];
 var currentPlaylistIndex;
 var loadedYouTubeAPI=false;
-var channelLimit={},requiredKeyword="",sortType="",searchTerm,channelSearchTerm;
+var channelLimit={},requiredKeyword="",sortType="",searchTerm,channelSearchTerm,channelUploadsPlaylist;
 var pages=0,maxPages=20;
-
-/*function getGoodItemFromResponse(response,required,oldVideoId){
-	if (response.length==0) return null;
-	var video=response.items[Math.floor(Math.random()*response.items.length)];
-	var tries=0;
-
-	while ((video==null || video==undefined || !video.snippet.title.includes(required) || video.id.videoId==oldVideoId)&& tries<response.items.length ){
-		video=response.items[Math.floor(Math.random()*response.items.length)];
-		tries+=1;
-	}
-
-	//console.log(video.id.videoId+","+oldVideoId);
-	return video;
-}*/
+var numberRegex=/(\d+)/;
+var seasonRegex=/[sS](eason)?(\s+)?(\d+)/;//"[sS](eason)?\\s"+numberRegex;
+var episodeRegex=/[eE]p?(isode|\.)?(\s+)?(\d+)/;
+var partRegex=/[pP](ar)?[tT]?(\s+)?(\d+)/;
+var chapterRegex=/[cC]([hH])?(apter)?(\s)?(\d+)/;
+var currentVideoID=null;
 
 function setMessage(msg){
 	document.getElementById("message").innerHTML=msg;
 }
 
 function constructPlaylist(){
+	console.log(currentVideoID);
+	if (currentVideoID!=null){
+		console.log("Using initial video");
+		createPlayer(currentVideoID);
+		//player.loadVideoById(currentVideoID);
+		document.getElementById("currentPlaylistIndex").value=currentPlaylistIndex;
+	}
+
 	console.log(currentPlaylistIndex);
 	channelLimit="";
 	channelSearchTerm=document.getElementById("channelSearchTerm").value;
@@ -61,21 +61,25 @@ function constructPlaylist(){
 
 function compileVideoList(){
 	console.log("Compiling list");
-	searchTerm=document.getElementById("searchTerm").value;
+	//searchTerm=document.getElementById("searchTerm").value;
 	requiredKeyword=document.getElementById("requiredKeyword").value;
 	sortType=document.getElementById("sortType").value;
-	console.log(sortType);
+	var videoCount=parseInt(document.getElementById("videoCount").value);
+	if (videoCount<=0) maxPages=-1;
+	else maxPages=Math.max(1,videoCount/50);
+	console.log(sortType,maxPages);
 	playlist=[];
 
-	var initialSearchData={
-		type : 'video',
-		q : searchTerm,
-		maxResults : 50,
-		channelId : channelLimit.id.channelId,
-		order:sortType
-	}
+	getChannelDetails(channelLimit.id.channelId,function(response){
+		console.log(response);
+		channelUploadsPlaylist=response.items[0].contentDetails.relatedPlaylists.uploads;
+		var initialSearchData={
+			playlistId : channelUploadsPlaylist,
+			maxResults : 50,
+		}
 
-	search(initialSearchData,addResponseToPlaylist);
+		searchPlaylist(initialSearchData,addResponseToPlaylist);
+	})
 }
 
 function addResponseToPlaylist(response){
@@ -84,19 +88,17 @@ function addResponseToPlaylist(response){
 	pages+=1;
 	setMessage("Found Page "+pages);
 
-	if (response.nextPageToken==null || pages>=maxPages){
+	if (response.nextPageToken==null || (pages>=maxPages&&maxPages!=-1) ){
 		randomizePlaylist();
 		return;
 	}
 	var nextSearchData={
-		type : 'video',
-		q : searchTerm,
+		playlistId : channelUploadsPlaylist,
 		maxResults : 50,
-		channelId : channelLimit.id.channelId,
 		pageToken : response.nextPageToken,
 		order:sortType
 	}
-	search(nextSearchData,addResponseToPlaylist);
+	searchPlaylist(nextSearchData,addResponseToPlaylist);
 }
 
 function randomizePlaylist(){
@@ -105,8 +107,9 @@ function randomizePlaylist(){
 	var oldPlaylist=playlist.slice(0);
 	playlist=[];
 	for(var i=0;i<oldPlaylist.length;i++){
-		if (oldPlaylist[i].snippet.title.includes(requiredKeyword))
-			playlist.push(oldPlaylist[i]);
+		if (!oldPlaylist[i].snippet.title.includes(requiredKeyword)) continue;
+		if (sortType=="title" && ((oldPlaylist[i].snippet.title.search(episodeRegex)==-1&&oldPlaylist[i].snippet.title.search(chapterRegex)==-1)||oldPlaylist[i].snippet.title.search(seasonRegex)==-1)) continue; //Remove item if it isn't an episode
+		playlist.push(oldPlaylist[i]);
 	}
 
 	console.log(playlist.length);
@@ -121,6 +124,33 @@ function randomizePlaylist(){
 		currentPlaylistIndex=Math.floor(Math.random()*(playlist.length));
 	}else if (sortType=="date"){
 		playlist.reverse();
+	}else if (sortType=="title"){
+		for (var episodeIndex in playlist){
+			var episode=playlist[episodeIndex];
+			var title=episode.snippet.title;
+
+			var seasonMatch=title.match(seasonRegex),seasonNumber=-1;
+			if (seasonMatch!=null) seasonNumber=parseFloat(seasonMatch[0].match(numberRegex)[0]);
+
+			var episodeMatch=title.match(episodeRegex),episodeNumber=-1;
+			if (episodeMatch!=null) episodeNumber=parseFloat(episodeMatch[0].match(numberRegex)[0]);
+
+			var chapterMatch=title.match(chapterRegex);
+			if (chapterMatch!=null&&episodeNumber==-1) episodeNumber=parseFloat(chapterMatch[0].match(numberRegex)[0]);
+
+			var partMatch=title.match(partRegex),partNumber=0;
+			if (partMatch!=null) partNumber=parseFloat(partMatch[0].match(numberRegex)[0]);
+
+			episode.showPosition={seasonNumber,episodeNumber,partNumber};
+		}
+		playlist.sort(function(a,b){
+			if (a.showPosition.seasonNumber==b.showPosition.seasonNumber){
+				if (a.showPosition.episodeNumber==b.showPosition.episodeNumber)
+					return a.showPosition.partNumber-b.showPosition.partNumber;
+				return a.showPosition.episodeNumber-b.showPosition.episodeNumber;
+			}
+			return a.showPosition.seasonNumber-b.showPosition.seasonNumber;
+		})
 	}
 
 	console.log(currentPlaylistIndex,playlist.length);
@@ -129,7 +159,7 @@ function randomizePlaylist(){
 	if (player==null){
 		createPlayer();
 		applyPlaylistCookie();
-	}else
+	}else if (currentVideoID==null)
 		applyPlaylistToSite();
 }
 
@@ -154,22 +184,31 @@ function previousVideo(){
 	applyPlaylistToSite();
 }
 
+function changePlaylistIndex(){
+	currentPlaylistIndex=parseInt(document.getElementById("currentPlaylistIndex").value);
+	applyPlaylistToSite();
+}
+
 function applyPlaylistToSite(){
 	setMessage("");
-	player.loadVideoById(playlist[currentPlaylistIndex].id.videoId,0,"large");
-
+	console.log(playlist[currentPlaylistIndex].contentDetails.videoId);
+	currentVideoID=playlist[currentPlaylistIndex].contentDetails.videoId;
+	player.loadVideoById(currentVideoID,0,"large");
+	document.getElementById("currentPlaylistIndex").value=currentPlaylistIndex;
 	applyPlaylistCookie();
 	//document.getElementById("next").src=playlist[playlist.length-1].snippet.thumbnails.default.url;
 }
 
 function applyPlaylistCookie(){
 	setCookies({
-		"cookieVersion":"1.0",
+		"cookieVersion":"1.1",
 		"channelSearchTerm":channelSearchTerm,
 		"searchTerm":searchTerm,
 		"requiredKeyword":requiredKeyword,
 		"sortType":sortType,
-		"index":currentPlaylistIndex
+		"index":currentPlaylistIndex,
+		"currentVideoID":currentVideoID,
+		"pageCount":maxPages
 	});
 }
 
@@ -180,12 +219,13 @@ function onYouTubeIframeAPIReady() {
 	//document.getElementById("nextButton").disabled=false;
 }
 
-function createPlayer(){
+function createPlayer(videoID){
 	if (player!=null) return;
+    if (videoID==null) videoID=playlist[currentPlaylistIndex].contentDetails.videoId;
 	player = new YT.Player('player', {
 		height: '100%',
 		width: '100%',
-		videoId: playlist[currentPlaylistIndex].id.videoId,
+		videoId: videoID,
 		modestBranding: 1,
 		rel: 0,
 

@@ -27,7 +27,7 @@ function loadCookie(name){
 }
 
 function setCookie(name,value,cookieExpireTime){
-	console.log("Setting Cookie");
+	//console.log("Setting Cookie");
 	var cookieStr="path=/;";
 	if (cookieExpireTime!=0){
 		var d = new Date();
@@ -40,13 +40,13 @@ function setCookie(name,value,cookieExpireTime){
 	cookieStr=name+"="+value+"; "+cookieStr;
 
 	document.cookie=cookieStr;
-	console.log("Set Cookie: "+cookieStr);
+	//console.log("Set Cookie: "+cookieStr);
 }
 
 function setCookies(data){
 	for(var key in data){
 		if (!data.hasOwnProperty(key)) continue;
-		console.log(key);
+		//console.log(key);
 		setCookie(key,data[key],0);
 	}
 }

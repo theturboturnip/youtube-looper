@@ -28,52 +28,23 @@
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 	<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
 	<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <body style="text-align: center;font-family:Roboto;">
-	<h2 >L∞PER</h2>
-	<div id="content-parent" style="position:absolute;left:5%;right:5%;top:80px;bottom:10%;">
-		<div style="width:60%;background-color:black;height:66.25%;float:left;" id="player-parent">
-			<div id="player" style="display:inline-block;"></div>
+	<h2>L∞PER</h2>
+	<div id="content-parent" style="position:absolute;left:5%;right:5%;top:80px;">
+		<div id="player-side">
+			<div id="player-parent">
+				<div id="player"></div>
+			</div>
+			<br>
+			<div style="position:relative;top:100%;height:50px;" id="player-input-parent"></div>
 		</div>
-		<div style="width:35%;height:100%;float:right;" id="input-parent"></div>
-		<br>
-		<div style="width:60%;height:50px;float:left;" id="player-input-parent"></div>
-
+		<div style="width:400px;right:0%;height:100%;float:right;" id="input-parent"></div>
+		<div style="width:400px;right:400px;float:right;height:100%;"></div>
 	</div>
-	
-
-
-	<!--
-
-	<div id="playerHolder" style="position:absolute;left:1%;right:37%;height:68%;top:80px;background-color:red">
-
-		<button id="nextButton" onclick="nextVideo()" disabled ><img id="next" src="https://i.ytimg.com/vi/NPpA7FsvWNM/default.jpg"></img></button>
-	</div>
-
-	<div id="input" style="position:absolute;height:300px;bottom:0%;left:0%;right:0%">
-		<div style="display:inline">
-			
-			
-		</div>
-
-		<br>
-		<br>
-		Limit Channel: <input type="text" id="channelSearch">
-		<button id="channelSearchButton" onclick="findChannelLimit()">Identify</button>
-		<br>
-		<br>
-	position:absolute;height:300px;bottom:0%;left:10%;right:58%;justify-content:left;align:left;text-align:left;	
-
-	</div>!-->
-	<!--
-					<label class="mdl-select__label" for="channelSearch">Channel</label>
-					<label class="mdl-select__label" for="searchTerm">Search Term</label>
-					<label class="mdl-select__label" for="requiredKeyword">Required Term</label>
-					<label class="mdl-select__label" for="sortType">Sorting Type</label>
-
-	!-->
-	
 </body>
 
 </html>

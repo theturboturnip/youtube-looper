@@ -21,5 +21,30 @@ function search(data,onSearch){
 		url: 'https://www.googleapis.com/youtube/v3/search',
 		data:data,
 		success:onSearch
-	})
+	});
+}
+function searchPlaylist(data,onSearch){
+	data.part="contentDetails,snippet";
+	data.key=API_KEY;
+	$.ajax({
+		async:true,
+		type: 'GET',
+		url: 'https://www.googleapis.com/youtube/v3/playlistItems',
+		data:data,
+		success:onSearch
+	});
+}
+function getChannelDetails(channelId,onSearch){
+	var data={
+		part:"contentDetails",
+		key:API_KEY,
+		id:channelId
+	};
+	$.ajax({
+		async:true,
+		type: 'GET',
+		url: 'https://www.googleapis.com/youtube/v3/channels',
+		data:data,
+		success:onSearch
+	});
 }
